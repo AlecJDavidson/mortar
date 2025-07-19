@@ -4,15 +4,15 @@ use axum::{
 };
 use std::net::SocketAddr;
 
-mod structs;
 mod handlers;
+mod structs;
 use crate::handlers::{bad_request, create_resource, hello_world, not_found_handler};
 
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .route("/hello", get(hello_world))
-        .route("/create", post(create_resource))
+        .route("/hello", get(hello_world)) // just a test endpoint so I don't go insane
+        .route("/create", post(create_resource)) // unused for now
         .route("/bad-request", get(bad_request))
         .fallback(get(not_found_handler));
 
