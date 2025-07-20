@@ -1,7 +1,9 @@
-use axum::{extract::Json, http::StatusCode, response::IntoResponse};
+use axum::{extract::Json, extract::State, http::StatusCode, response::IntoResponse};
+use serde_json::json;
 use std::process::Command;
+use std::sync::Arc;
 
-use crate::structs::{ErrorResponse, SuccessResponse, Brick};
+use crate::structs::{Brick, Db, ErrorResponse, NewBrick, SuccessResponse};
 
 pub async fn hello_world() -> impl IntoResponse {
     let success_response = SuccessResponse {
@@ -75,6 +77,33 @@ pub async fn invoke_brick(Json(brick): Json<Brick>) -> impl IntoResponse {
                 };
                 (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)).into_response()
             }
+        }
+    }
+}
+
+pub async fn create_brick(
+    State(state): State<Arc<Db>>,
+    Json(payload): Json<NewBrick>,
+) -> (axum::http::StatusCode, Json<String>) {
+    let brick = Brick {
+        id: uuid::Uuid::new_v4(),
+        name: payload.name.clone(),
+        creation_time: chrono::Utc::now().to_string(),
+        last_invocation: None,
+        language: payload.language,
+        source_path: payload.source_path,
+    };
+
+    match state.create_brick(&brick).await {
+        Ok(_) => (axum::http::StatusCode::CREATED, Json(json!({
+            "id": brick.id,
+            "message": "Brick created successfully"
+        }).to_string())),
+        Err(e) => {
+            eprintln!("Error creating brick: {}", e);
+            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "error": "Failed to create brick"
+            }).to_string()))
         }
     }
 }
