@@ -30,7 +30,7 @@ async fn main() {
     let db = Db::new(&database_url)
         .await
         .expect("Failed to create database pool");
-    let state = Arc::new(db);
+    // let state = Arc::new(db);
 
     let app = Router::new()
         .route("/hello", get(hello_world)) // just a test endpoint so I don't go insane
@@ -38,7 +38,7 @@ async fn main() {
         .route("/bad-request", get(bad_request))
         .route("/invoke-brick", post(invoke_brick)) // brick invocation
         .route("/create-brick", post(create_brick)) // brick creation
-        .layer(FromRef::default().into_shared_state(state))
+        // .layer(FromRef::default().into_shared_state(state))
         .fallback(get(not_found_handler));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
