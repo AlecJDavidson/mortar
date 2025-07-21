@@ -1,11 +1,12 @@
 use axum::{
-    Router,
-    extract::FromRef,
     routing::{get, post},
+    Router,
 };
 use dotenv::dotenv;
 use sqlx::{Pool, Postgres};
-use std::{env, sync::Arc};
+use std::{env, net::SocketAddr, sync::Arc};
+use tokio::net::TcpListener;
+
 mod db;
 mod handlers;
 mod structs;
@@ -32,14 +33,18 @@ async fn main() {
     let state = Arc::new(db);
 
     let app = Router::new()
-        .route("/hello", get(hello_world)) // just a test endpoint so I don't go insane
-        .route("/create", post(create_resource)) // unused for now
+        .route("/hello", get(hello_world))
+        .route("/create", post(create_resource))
         .route("/bad-request", get(bad_request))
-        .route("/invoke-brick", post(invoke_brick)) // brick invocation
-        .route("/create-brick", post(create_brick)) // brick creation
-        .layer(FromRef::<Arc<Db>>::layer(state.clone()))
-        .fallback(get(not_found_handler));
+        .route("/invoke-brick", post(invoke_brick))
+        .route("/create-brick", post(create_brick))
+        .with_state(state)
+        .fallback(not_found_handler);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    // Bind to address and serve app
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let listener = TcpListener::bind(&addr).await.unwrap();
+    axum::serve(listener, app.into_make_service())
+        .await
+        .unwrap();
 }

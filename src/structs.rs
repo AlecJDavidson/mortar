@@ -37,7 +37,7 @@ pub struct Brick {
     pub last_invocation: Option<String>, // Option<DateTime<Utc>>,
     pub language: Language,
     pub source_path: String,
-    pub active: bool
+    pub active: bool,
 }
 
 #[derive(Serialize, Deserialize)]
