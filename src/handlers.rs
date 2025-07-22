@@ -95,7 +95,7 @@ pub async fn create_brick(
     // TODO: creation time should be generated here
     // TODO: In prod the new brick should be active: false
     let brick = Brick {
-        id: brick_id.to_string(),
+        id: brick_id,
         name: payload.name,
         creation_time: payload.creation_time, // DateTime<Utc>,
         last_invocation: None,                // Option<DateTime<Utc>>,

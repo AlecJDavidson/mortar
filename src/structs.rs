@@ -16,7 +16,7 @@ pub struct SuccessResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct Brick {
-    pub id: String,
+    pub id: i32,
     pub name: String,
     pub creation_time: String,           // DateTime<Utc>,
     pub last_invocation: Option<String>, // Option<DateTime<Utc>>,

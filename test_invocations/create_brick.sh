@@ -1,7 +1,7 @@
 curl -X POST http://127.0.0.1:3000/create-brick \
      -H "Content-Type: application/json" \
      -d '{
-           "id": "nge-0000001",
+           "id": 0,
            "name": "Hello Brick",
            "creation_time": "2025-07-21T14:30:00Z",
            "last_invocation": null,
