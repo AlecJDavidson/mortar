@@ -3,7 +3,7 @@ use axum::{extract::Json, extract::State, http::StatusCode, response::IntoRespon
 use std::process::Command;
 use std::sync::Arc;
 
-use crate::structs::{Brick, Db, ErrorResponse, SuccessResponse};
+use crate::structs::{Brick, Db, ErrorResponse, NewBrick, SuccessResponse};
 
 pub async fn hello_world() -> impl IntoResponse {
     let success_response = SuccessResponse {
@@ -83,26 +83,22 @@ pub async fn invoke_brick(Json(brick): Json<Brick>) -> impl IntoResponse {
 
 pub async fn create_brick(
     State(state): State<Arc<Db>>,
-    Json(payload): Json<Brick>,
-) -> (axum::http::StatusCode, Json<Brick>) {
-    let query = "INSERT INTO bricks (name) VALUES ($1) RETURNING id";
-    let brick_id: i32 = sqlx::query_scalar(query)
+    Json(payload): Json<NewBrick>,
+) -> (axum::http::StatusCode, Json<NewBrick>) {
+    let query = "INSERT INTO bricks (name, language, source_path) VALUES ($1, $2, $3) RETURNING id";
+
+    let _brick_id: i32 = sqlx::query_scalar(query)
         .bind(&payload.name)
+        .bind(&payload.language.to_string()) // Convert Language enum to string
+        .bind(&payload.source_path)
         .fetch_one(&state.pool)
         .await
         .expect("Failed to insert brick");
 
-    // TODO: creation time should be generated here
-    // TODO: In prod the new brick should be active: false
-    let brick = Brick {
-        id: brick_id,
+    let new_brick = NewBrick {
         name: payload.name,
-        creation_time: payload.creation_time, // DateTime<Utc>,
-        last_invocation: None,                // Option<DateTime<Utc>>,
         language: payload.language,
         source_path: payload.source_path,
-        active: true
     };
-
-    (axum::http::StatusCode::CREATED, Json(brick))
+    (axum::http::StatusCode::CREATED, Json(new_brick))
 }

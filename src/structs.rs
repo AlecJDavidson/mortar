@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
+use std::fmt;
 // use uuid::Uuid; // TODO: Get this working
 
 #[derive(Serialize, Deserialize)]
@@ -26,10 +27,27 @@ pub struct Brick {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct NewBrick {
+    pub name: String,
+    pub language: Language,
+    pub source_path: String,
+}
+
+#[derive(Serialize, Deserialize)]
 pub enum Language {
     Rust,
     C,
     Bash,
+}
+
+impl fmt::Display for Language {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Language::Rust => write!(f, "Rust"),
+            Language::C => write!(f, "C"),
+            Language::Bash => write!(f, "Bash"),
+        }
+    }
 }
 
 pub struct Db {
