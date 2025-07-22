@@ -1,5 +1,4 @@
 use axum::{extract::Json, extract::State, http::StatusCode, response::IntoResponse};
-// use serde_json::json;
 use std::process::Command;
 use std::sync::Arc;
 
@@ -85,11 +84,14 @@ pub async fn create_brick(
     State(state): State<Arc<Db>>,
     Json(payload): Json<Brick>,
 ) -> (axum::http::StatusCode, Json<Brick>) {
-    let query = "INSERT INTO bricks (name, language, source_path, active) VALUES ($1, $2, $3, $4) RETURNING id";
+    let query = "INSERT INTO bricks (id, name, language, source_path, active) VALUES ($1, $2, $3, $4, $5) RETURNING id";
 
-    let brick_id: i32 = sqlx::query_scalar(query)
+    let brick_id: uuid::Uuid = uuid::Uuid::new_v4();
+
+    let _brick: String = sqlx::query_scalar(query)
+        .bind(&brick_id.to_string())
         .bind(&payload.name)
-        .bind(&payload.language.to_string()) // Convert Language enum to string
+        .bind(&payload.language.to_string())
         .bind(&payload.source_path)
         .bind(&payload.active)
         .fetch_one(&state.pool)
@@ -97,10 +99,10 @@ pub async fn create_brick(
         .expect("Failed to insert brick");
 
     let brick = Brick {
-        id: brick_id,
+        id: Some(brick_id),
         name: payload.name,
-        creation_time: None,
-        last_invocation: None,
+        creation_time: Some(chrono::Utc::now().to_string()), // Option<DateTime<Utc>>, NEED TO FIX THIS
+        last_invocation: None, // Option<DateTime<Utc>>, NEED TO FIX THIS
         language: payload.language,
         source_path: payload.source_path,
         active: true,

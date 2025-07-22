@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use std::fmt;
-// use uuid::Uuid; // TODO: Get this working
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub struct ErrorResponse {
@@ -17,7 +17,7 @@ pub struct SuccessResponse {
 
 #[derive(Serialize, Deserialize)]
 pub struct Brick {
-    pub id: i32,
+    pub id: Option<Uuid>,
     pub name: String,
     pub creation_time: Option<String>,   // DateTime<Utc>,
     pub last_invocation: Option<String>, // Option<DateTime<Utc>>,
