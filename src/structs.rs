@@ -15,9 +15,9 @@ pub struct SuccessResponse {
     pub message: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(sqlx::FromRow, Serialize, Deserialize)]
 pub struct Brick {
-    pub id: Option<Uuid>,
+    pub id: Option<String>,
     pub name: String,
     pub creation_time: Option<String>,   // DateTime<Utc>,
     pub last_invocation: Option<String>, // Option<DateTime<Utc>>,

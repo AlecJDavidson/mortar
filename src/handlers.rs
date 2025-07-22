@@ -1,8 +1,13 @@
-use axum::{extract::Json, extract::State, http::StatusCode, response::IntoResponse};
+use axum::{
+    extract::Extension, extract::Json, extract::State, http::StatusCode, response::IntoResponse,
+};
+// use sqlx::postgres::{PgPool, PgRow};
+// use sqlx::{FromRow, Row};
+use sqlx::postgres::PgPoolOptions;
 use std::process::Command;
 use std::sync::Arc;
 
-use crate::structs::{Brick, Db, ErrorResponse, SuccessResponse};
+use crate::structs::{Brick, Db, ErrorResponse, Language, SuccessResponse};
 
 pub async fn hello_world() -> impl IntoResponse {
     let success_response = SuccessResponse {
@@ -99,13 +104,15 @@ pub async fn create_brick(
         .expect("Failed to insert brick");
 
     let brick = Brick {
-        id: Some(brick_id),
+        id: Some(brick_id.to_string()),
         name: payload.name,
-        creation_time: Some(chrono::Utc::now().to_string()), // Option<DateTime<Utc>>, NEED TO FIX THIS
-        last_invocation: None, // Option<DateTime<Utc>>, NEED TO FIX THIS
+        creation_time: Some(chrono::Utc::now().to_string()),
+        last_invocation: None,
         language: payload.language,
         source_path: payload.source_path,
         active: true,
     };
     (axum::http::StatusCode::CREATED, Json(brick))
 }
+
+// Test query
