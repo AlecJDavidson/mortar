@@ -14,21 +14,6 @@ pub struct SuccessResponse {
     pub message: String,
 }
 
-// Old
-
-// #[derive(Serialize, Deserialize)]
-// pub struct Brick {
-//     pub id: String,
-//     pub name: String,
-//     pub creation_time: String, // DateTime<Utc>,
-//     pub last_invocation: String, // Option<DateTime<Utc>>,
-//     pub language: Language,
-//     pub source_path: String,
-//     pub active: bool
-// }
-
-// New
-
 #[derive(Serialize, Deserialize)]
 pub struct Brick {
     pub id: String,

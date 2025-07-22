@@ -1,13 +1,13 @@
 use axum::{
-    routing::{get, post},
     Router,
+    routing::{get, post},
 };
 use dotenv::dotenv;
 use sqlx::{Pool, Postgres};
 use std::{env, net::SocketAddr, sync::Arc};
 use tokio::net::TcpListener;
 
-mod db;
+// mod db;
 mod handlers;
 mod structs;
 
@@ -41,8 +41,7 @@ async fn main() {
         .with_state(state)
         .fallback(not_found_handler);
 
-    // Bind to address and serve app
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     let listener = TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app.into_make_service())
         .await
