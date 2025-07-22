@@ -19,18 +19,11 @@ pub struct SuccessResponse {
 pub struct Brick {
     pub id: i32,
     pub name: String,
-    pub creation_time: String,           // DateTime<Utc>,
+    pub creation_time: Option<String>,   // DateTime<Utc>,
     pub last_invocation: Option<String>, // Option<DateTime<Utc>>,
     pub language: Language,
     pub source_path: String,
     pub active: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct NewBrick {
-    pub name: String,
-    pub language: Language,
-    pub source_path: String,
 }
 
 #[derive(Serialize, Deserialize)]
