@@ -4,7 +4,7 @@
 #[allow(dead_code)]
 use axum::{
     response::IntoResponse,
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
     Json, Router,
 };
 use dotenv::dotenv;
@@ -21,9 +21,6 @@ mod handler;
 mod model;
 mod schema;
 mod structs;
-
-use crate::model::{BrickModel, BrickModelResponse};
-use crate::schema::{CreateBrickSchema, FilterOptions, UpdateBrickSchema};
 
 pub struct AppState {
     db: PgPool,
@@ -57,6 +54,7 @@ async fn main() {
         .route("/api/brick", get(list_brick_handler))
         .route("/api/brick/:id", get(get_brick_handler))
         .route("/api/brick/:id", put(update_brick_handler))
+        .route("/api/brick/:id", patch(update_brick_handler))
         .route("/api/brick/:id", delete(delete_brick_handler))
         .with_state(Arc::new(AppState { db: pool.clone() }));
 
