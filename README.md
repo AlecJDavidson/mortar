@@ -32,7 +32,7 @@ cargo install sqlx-cli
 # Update the up/down/revert
 -- Add up migration script here
 
-CREATE TABLE IF NOT EXISTS poke(
+CREATE TABLE IF NOT EXISTS bricks(
     id CHAR(36) PRIMARY KEY NOT NULL,
     name VARCHAR(255) NOT NULL UNIQUE,
     language VARCHAR(255) NOT NULL,
@@ -55,7 +55,6 @@ DROP TABLE IF EXISTS bricks;
 ### Creating a CRUD app using this tutorial ###
 
 https://medium.com/@raditzlawliet/build-crud-rest-api-with-rust-and-mysql-using-axum-sqlx-d7e50b3cd130
-
 
 
 ### Notes ###

@@ -1,49 +1,91 @@
+/* ### SETUP THE SERVER ### */
+
+/* ALLOW DEAD CODE */
+#[allow(dead_code)]
 use axum::{
-    Router,
-    routing::{get, post},
+    response::IntoResponse,
+    routing::{delete, get, post, put},
+    Json, Router,
 };
 use dotenv::dotenv;
-use sqlx::{Pool, Postgres};
-use std::{env, net::SocketAddr, sync::Arc};
+use handler::{
+    create_brick_handler, delete_brick_handler, get_brick_handler, list_brick_handler,
+    update_brick_handler,
+};
 use tokio::net::TcpListener;
 
-// mod db;
-mod handlers;
+use sqlx::postgres::{PgPool, PgPoolOptions};
+use std::sync::Arc;
+
+mod handler;
+mod model;
+mod schema;
 mod structs;
 
-use crate::handlers::{
-    bad_request, create_brick, create_resource, hello_world, invoke_brick, not_found_handler,
-};
-use crate::structs::Db;
+use crate::model::{BrickModel, BrickModelResponse};
+use crate::schema::{CreateBrickSchema, FilterOptions, UpdateBrickSchema};
+
+pub struct AppState {
+    db: PgPool,
+}
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    dotenv().ok(); // Read from .env file
 
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    let pool: Pool<Postgres> = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
+    // Setup the DB Connection
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must set");
+    let pool = match PgPoolOptions::new()
+        .max_connections(10)
         .connect(&database_url)
         .await
-        .expect("Could not connect to the database");
-
-    let db = Db::new(pool).await.expect("Failed to create database pool");
-    let state = Arc::new(db);
+    {
+        Ok(pool) => {
+            println!("✅ Connection to the database is successful!");
+            pool
+        }
+        Err(err) => {
+            println!("❌ Failed to connect to the database: {:?}", err);
+            std::process::exit(1);
+        }
+    };
 
     let app = Router::new()
-        .route("/hello", get(hello_world))
-        .route("/create", post(create_resource))
-        .route("/bad-request", get(bad_request))
-        .route("/invoke-brick", post(invoke_brick))
-        .route("/create-brick", post(create_brick))
-        .with_state(state)
-        .fallback(not_found_handler);
+        .route("/api/hello", get(hello_handler))
+        .route("/api/healthcheck", get(health_check_handler))
+        .route("/api/brick", post(create_brick_handler))
+        .route("/api/brick", get(list_brick_handler))
+        .route("/api/brick/:id", get(get_brick_handler))
+        .route("/api/brick/:id", put(update_brick_handler))
+        .route("/api/brick/:id", delete(delete_brick_handler))
+        .with_state(Arc::new(AppState { db: pool.clone() }));
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    let listener = TcpListener::bind(&addr).await.unwrap();
+    println!("✅ Server started successfully at 0.0.0.0:3000");
+
+    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
+}
+
+pub async fn health_check_handler() -> impl IntoResponse {
+    const MESSAGE: &str = "API Services";
+
+    let json_response = serde_json::json!({
+        "status": "ok",
+        "message": MESSAGE
+    });
+
+    Json(json_response)
+}
+
+pub async fn hello_handler() -> impl IntoResponse {
+    const MESSAGE: &str = "Hello World!";
+
+    let json_response = serde_json::json!({
+        "status": "ok",
+        "message": MESSAGE
+    });
+
+    Json(json_response)
 }
