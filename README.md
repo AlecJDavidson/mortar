@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS bricks(
     last_invoked TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
+    active BOOLEAN,
+
+
 -- Add down migration script here
 
 DROP TABLE IF EXISTS bricks;
