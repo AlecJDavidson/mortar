@@ -20,7 +20,6 @@ use std::sync::Arc;
 mod handler;
 mod model;
 mod schema;
-mod structs;
 
 pub struct AppState {
     db: PgPool,

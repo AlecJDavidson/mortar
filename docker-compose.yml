@@ -1,12 +1,12 @@
 services:
   mortar-database:
     image: postgres:latest
-    network_mode: "host"
+    # network_mode: "host"
     environment:
       # The default database created on container startup
       POSTGRES_DB: mortar
       # Replace these with your desired username and password
       POSTGRES_USER: mortar
       POSTGRES_PASSWORD: mortar 
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "9432:5432"

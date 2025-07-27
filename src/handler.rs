@@ -6,7 +6,8 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use serde_json::json;
+use serde_json::{json, Value};
+use sqlx::{query, query_as, Error as SqlxError};
 
 use crate::{
     model::{BrickModel, BrickModelResponse},
@@ -31,16 +32,16 @@ fn to_brick_response(brick: &BrickModel) -> BrickModelResponse {
 pub async fn list_brick_handler(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     // Param
-    let Query(opts) = opts.unwrap_or_default();
+    let Query(_opts) = opts.unwrap_or_default();
 
     // Query without macro
-    let bricks = sqlx::query_as!(BrickModel, r#"SELECT * FROM bricks ORDER by id"#,)
+    let bricks = query_as!(BrickModel, r#"SELECT * FROM bricks ORDER by id"#,)
         .fetch_all(&data.db)
         .await
         .map_err(|e| {
-            let error_response = serde_json::json!({
+            let error_response = json!({
                 "status": "error",
                 "message": format!("Database error: { }", e),
             });
@@ -53,7 +54,7 @@ pub async fn list_brick_handler(
         .map(|brick| to_brick_response(&brick))
         .collect::<Vec<BrickModelResponse>>();
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "ok",
         "count": brick_responses.len(),
         "bricks": brick_responses
@@ -67,25 +68,24 @@ pub async fn list_brick_handler(
 pub async fn create_brick_handler(
     State(data): State<Arc<AppState>>,
     Json(body): Json<CreateBrickSchema>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     // Insert
     let id = uuid::Uuid::new_v4().to_string();
 
-    let query_result = sqlx::query(
-        r#"INSERT INTO bricks (id, name, language, source_path ) VALUES ($1, $2, $3, $4)"#,
-    )
-    .bind(&id.to_string())
-    .bind(&body.name)
-    .bind(&body.language)
-    .bind(&body.source_path)
-    .execute(&data.db)
-    .await
-    .map_err(|err: sqlx::Error| err.to_string());
+    let query_result =
+        query(r#"INSERT INTO bricks (id, name, language, source_path ) VALUES ($1, $2, $3, $4)"#)
+            .bind(&id.to_string())
+            .bind(&body.name)
+            .bind(&body.language)
+            .bind(&body.source_path)
+            .execute(&data.db)
+            .await
+            .map_err(|err: SqlxError| err.to_string());
 
     // Duplicate err check
     if let Err(err) = query_result {
         if err.contains("Duplicate entry") {
-            let error_response = serde_json::json!({
+            let error_response = json!({
                 "status": "error",
                 "message": "Brick already exists",
             });
@@ -99,7 +99,7 @@ pub async fn create_brick_handler(
     }
 
     // Get inserted brick by ID
-    let brick = sqlx::query_as!(BrickModel, r#"SELECT * FROM bricks WHERE id = $1"#, &id)
+    let brick = query_as!(BrickModel, r#"SELECT * FROM bricks WHERE id = $1"#, &id)
         .fetch_one(&data.db)
         .await
         .map_err(|e| {
@@ -109,9 +109,9 @@ pub async fn create_brick_handler(
             )
         })?;
 
-    let brick_response = serde_json::json!({
+    let brick_response = json!({
         "status": "success",
-        "data": serde_json::json!({
+        "data": json!({
             "brick": to_brick_response(&brick)
         })
     });
@@ -124,29 +124,31 @@ pub async fn create_brick_handler(
 pub async fn get_brick_handler(
     Path(id): Path<String>,
     State(data): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     // Execute the query to fetch a brick by its ID
-    let query_result = sqlx::query_as!(BrickModel, r#"SELECT * FROM bricks WHERE id = $1"#, &id)
+    let query_result = query_as!(BrickModel, r#"SELECT * FROM bricks WHERE id = $1"#, &id)
         .fetch_one(&data.db)
         .await;
 
     match query_result {
         Ok(brick) => {
             // Construct the response if the brick is found
-            let brick_response = serde_json::json!({
+            let brick_response = json!({
                 "status": "success",
-                "data": serde_json::json!({
+                "data": json!({
                     "brick": to_brick_response(&brick)
                 })
             });
+            println!("{:?}", brick_response);
             Ok(Json(brick_response))
         }
-        Err(sqlx::Error::RowNotFound) => {
+        Err(SqlxError::RowNotFound) => {
             // Construct the error response if no brick is found
-            let error_response = serde_json::json!({
+            let error_response = json!({
                 "status": "fail",
                 "message": format!("Brick with ID: {} not found", id)
             });
+            println!("{:?}", error_response);
             Err((StatusCode::NOT_FOUND, Json(error_response)))
         }
         Err(e) => {
@@ -155,6 +157,7 @@ pub async fn get_brick_handler(
                 "status": "error",
                 "message": format!("{:?}", e),
             });
+            println!("{:?}", error_response);
             Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)))
         }
     }
@@ -166,15 +169,15 @@ pub async fn update_brick_handler(
     Path(id): Path<String>,
     State(data): State<Arc<AppState>>,
     Json(body): Json<UpdateBrickSchema>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     // Validate if the brick exists
-    let query_result = sqlx::query_as!(BrickModel, r#"SELECT * FROM bricks WHERE id = $1"#, &id)
+    let query_result = query_as!(BrickModel, r#"SELECT * FROM bricks WHERE id = $1"#, &id)
         .fetch_one(&data.db)
         .await;
     // Fetch the result and handle errors
-    let mut brick = match query_result {
+    let brick = match query_result {
         Ok(p) => p,
-        Err(sqlx::Error::RowNotFound) => {
+        Err(SqlxError::RowNotFound) => {
             let error_response = json!({
                 "status": "error",
                 "message": format!("Brick with ID: {} not found", id)
@@ -197,9 +200,9 @@ pub async fn update_brick_handler(
     let updated_language = body.language.unwrap_or(brick.language);
     let updated_source_path = body.source_path.unwrap_or(brick.source_path);
 
-    let update_result = sqlx::query(update_query)
+    let update_result = query(update_query)
         .bind(updated_name)
-        .bind(updated_language)  // Fixed variable name here
+        .bind(updated_language) // Fixed variable name here
         .bind(updated_source_path)
         .bind(&id)
         .execute(&data.db)
@@ -235,9 +238,9 @@ pub async fn update_brick_handler(
 pub async fn delete_brick_handler(
     Path(id): Path<String>,
     State(data): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     // delete with query macro
-    let query_result = sqlx::query!(r#"DELETE FROM bricks WHERE id = $1"#, &id)
+    let query_result = query!(r#"DELETE FROM bricks WHERE id = $1"#, &id)
         .execute(&data.db)
         .await
         .map_err(|e| {
@@ -252,7 +255,7 @@ pub async fn delete_brick_handler(
 
     // response
     if query_result.rows_affected() == 0 {
-        let error_response = serde_json::json!({
+        let error_response = json!({
             "status": "error",
             "message": format!("Brick with ID: {} not found", id)
         });
@@ -263,5 +266,3 @@ pub async fn delete_brick_handler(
 }
 
 // Invoke a brick
-
-
