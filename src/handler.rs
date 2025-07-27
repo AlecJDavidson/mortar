@@ -139,7 +139,7 @@ pub async fn get_brick_handler(
                     "brick": to_brick_response(&brick)
                 })
             });
-            println!("{:?}", brick_response);
+            println!("{:?}", brick_response); // TODO: Log me
             Ok(Json(brick_response))
         }
         Err(SqlxError::RowNotFound) => {
@@ -148,7 +148,7 @@ pub async fn get_brick_handler(
                 "status": "fail",
                 "message": format!("Brick with ID: {} not found", id)
             });
-            println!("{:?}", error_response);
+            println!("{:?}", error_response); // TODO: Log me
             Err((StatusCode::NOT_FOUND, Json(error_response)))
         }
         Err(e) => {
@@ -157,7 +157,7 @@ pub async fn get_brick_handler(
                 "status": "error",
                 "message": format!("{:?}", e),
             });
-            println!("{:?}", error_response);
+            println!("{:?}", error_response); // TODO: Log me
             Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)))
         }
     }
@@ -182,6 +182,7 @@ pub async fn update_brick_handler(
                 "status": "error",
                 "message": format!("Brick with ID: {} not found", id)
             });
+            println!("{:?}", error_response); // TODO: Log me
             return Err((StatusCode::NOT_FOUND, Json(error_response)));
         }
         Err(e) => {
@@ -189,6 +190,7 @@ pub async fn update_brick_handler(
                 "status": "error",
                 "message": format!("{:?}", e)
             });
+            println!("{:?}", error_response); // TODO: Log me
             return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
         }
     };
@@ -223,6 +225,7 @@ pub async fn update_brick_handler(
             "status": "error",
             "message": format!("Brick with ID: {} not found", id)
         });
+        println!("{:?}", error_response); // TODO: Log me
         return Err((StatusCode::NOT_FOUND, Json(error_response)));
     }
 
@@ -259,6 +262,7 @@ pub async fn delete_brick_handler(
             "status": "error",
             "message": format!("Brick with ID: {} not found", id)
         });
+        println!("{:?}", error_response); // TODO: Log me
         return Err((StatusCode::NOT_FOUND, Json(error_response)));
     }
 
