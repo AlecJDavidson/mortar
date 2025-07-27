@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{process::Command, sync::Arc};
 
 use axum::{
     extract::{Path, Query, State},
@@ -271,3 +271,86 @@ pub async fn delete_brick_handler(
 
 // Invoke a brick
 // TODO: Invoke a brick here
+
+pub async fn invoke_brick_handler(
+    Path(brick_id): Path<String>,
+    State(data): State<Arc<AppState>>,
+) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    let row = query!(
+        "SELECT id, source_path, language FROM bricks WHERE id = $1",
+        brick_id
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match row {
+        Ok(brick) => match brick.language.as_str() {
+            "Bash" | "bash" => {
+                let output = Command::new("bash")
+                    .arg(brick.source_path)
+                    .output()
+                    .expect("Failed to execute command");
+
+                if output.status.success() {
+                    Ok((
+                        StatusCode::OK,
+                        Json(json!({
+                            "status": "success",
+                            "stdout": String::from_utf8_lossy(&output.stdout).into_owned(),
+                            "stderr": String::from_utf8_lossy(&output.stderr).into_owned()
+                        })),
+                    ))
+                } else {
+                    Ok((
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({
+                            "status": "error",
+                            "stdout": String::from_utf8_lossy(&output.stdout).into_owned(),
+                            "stderr": String::from_utf8_lossy(&output.stderr).into_owned()
+                        })),
+                    ))
+                }
+            }
+            "Python" | "python" => {
+                let output = Command::new("python3")
+                    .arg(brick.source_path)
+                    .output()
+                    .expect("Failed to execute command");
+
+                if output.status.success() {
+                    Ok((
+                        StatusCode::OK,
+                        Json(json!({
+                            "status": "success",
+                            "stdout": String::from_utf8_lossy(&output.stdout).into_owned(),
+                            "stderr": String::from_utf8_lossy(&output.stderr).into_owned()
+                        })),
+                    ))
+                } else {
+                    Ok((
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(json!({
+                            "status": "error",
+                            "stdout": String::from_utf8_lossy(&output.stdout).into_owned(),
+                            "stderr": String::from_utf8_lossy(&output.stderr).into_owned()
+                        })),
+                    ))
+                }
+            }
+            _ => Err((
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "status": "error",
+                    "message": "Unsupported language"
+                })),
+            )),
+        },
+        Err(_) => Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "status": "error",
+                "message": "Brick not found"
+            })),
+        )),
+    }
+}

@@ -9,8 +9,8 @@ use axum::{
 };
 use dotenv::dotenv;
 use handler::{
-    create_brick_handler, delete_brick_handler, get_brick_handler, list_brick_handler,
-    update_brick_handler,
+    create_brick_handler, delete_brick_handler, get_brick_handler, invoke_brick_handler,
+    list_brick_handler, update_brick_handler,
 };
 use tokio::net::TcpListener;
 
@@ -55,6 +55,8 @@ async fn main() {
         .route("/api/brick/:id", put(update_brick_handler))
         .route("/api/brick/:id", patch(update_brick_handler))
         .route("/api/brick/:id", delete(delete_brick_handler))
+        // Invocations
+        .route("/api/brick/invoke/:id", get(invoke_brick_handler))
         .with_state(Arc::new(AppState { db: pool.clone() }));
 
     println!("✅ Server started successfully at 0.0.0.0:3000");
