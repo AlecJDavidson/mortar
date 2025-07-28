@@ -1,4 +1,9 @@
-use std::{collections::HashMap, process::Command, sync::Arc};
+use std::{
+    collections::HashMap,
+    env,
+    process::{Command, Stdio},
+    sync::Arc,
+};
 
 use axum::{
     extract::{Path, Query, State},
@@ -273,85 +278,84 @@ pub async fn delete_brick_handler(
 // TODO: Invoke a brick here
 
 pub async fn invoke_brick_handler(
-    Path(brick_id): Path<String>,
+    Path(id): Path<String>,
     State(data): State<Arc<AppState>>,
+
     params: Query<HashMap<String, String>>,
     payload: Option<Json<HashMap<String, Value>>>,
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
     let row = query!(
         "SELECT id, source_path, language FROM bricks WHERE id = $1",
-        brick_id
+        id
     )
     .fetch_one(&data.db)
     .await;
 
     match row {
-        Ok(brick) => {
-            match brick.language.as_str() {
-                "Bash" | "bash" => {
-                    let output = execute_script(
-                        &["bash", &brick.source_path],
-                        params.clone(),
-                        payload.clone(),
-                    );
+        Ok(brick) => match brick.language.as_str() {
+            "Bash" | "bash" => {
+                let output = execute_script(
+                    &["bash", &brick.source_path],
+                    params.0.clone(),
+                    payload.clone(),
+                );
 
-                    if output.status.success() {
-                        Ok((
-                            StatusCode::OK,
-                            Json(json!({
-                                "status": "success",
-                                "stdout": String::from_utf8_lossy(&output.stdout).into_owned(),
-                                "stderr": String::from_utf8_lossy(&output.stderr).into_owned()
-                            })),
-                        ))
-                    } else {
-                        Ok((
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(json!({
-                                "status": "error",
-                                "stdout": String::from_utf8_lossy(&output.stdout).into_owned(),
-                                "stderr": String::from_utf8_lossy(&output.stderr).into_owned()
-                            })),
-                        ))
-                    }
+                if output.status.success() {
+                    Ok((
+                        StatusCode::OK,
+                        Json(json!({
+                            "status": "success",
+                            "stdout": String::from_utf8_lossy(&output.stdout).trim_end().to_string(),
+                            "stderr": String::from_utf8_lossy(&output.stderr).trim_end().to_string()
+                        })),
+                    ))
+                } else {
+                    Ok((
+                        StatusCode::OK,
+                        Json(json!({
+                            "status": "error",
+                            "stdout": String::from_utf8_lossy(&output.stdout).trim_end().to_string(),
+                            "stderr": String::from_utf8_lossy(&output.stderr).trim_end().to_string()
+                        })),
+                    ))
                 }
-                "Python" | "python" => {
-                    let output = execute_script(
-                        &["python3", &brick.source_path],
-                        params.clone(),
-                        payload.clone(),
-                    );
-
-                    if output.status.success() {
-                        Ok((
-                            StatusCode::OK,
-                            Json(json!({
-                                "status": "success",
-                                "stdout": String::from_utf8_lossy(&output.stdout).into_owned(),
-                                "stderr": String::from_utf8_lossy(&output.stderr).into_owned()
-                            })),
-                        ))
-                    } else {
-                        Ok((
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            Json(json!({
-                                "status": "error",
-                                "stdout": String::from_utf8_lossy(&output.stdout).into_owned(),
-                                "stderr": String::from_utf8_lossy(&output.stderr).into_owned()
-                            })),
-                        ))
-                    }
-                }
-                _ => Err((
-                    StatusCode::BAD_REQUEST,
-                    Json(json!({
-                        "status": "error",
-                        "message": "Unsupported language"
-                    })),
-                )),
             }
-        }
-        Err(_) => Err((
+            "Python" | "python" | "python3" => {
+                let output = execute_script(
+                    &["python3", &brick.source_path],
+                    params.0.clone(),
+                    payload.clone(),
+                );
+
+                if output.status.success() {
+                    Ok((
+                        StatusCode::OK,
+                        Json(json!({
+                            "status": "success",
+                            "stdout": String::from_utf8_lossy(&output.stdout).trim_end().to_string(),
+                            "stderr": String::from_utf8_lossy(&output.stderr).trim_end().to_string()
+                        })),
+                    ))
+                } else {
+                    Ok((
+                        StatusCode::OK,
+                        Json(json!({
+                            "status": "error",
+                            "stdout": String::from_utf8_lossy(&output.stdout).trim_end().to_string(),
+                            "stderr": String::from_utf8_lossy(&output.stderr).trim_end().to_string()
+                        })),
+                    ))
+                }
+            }
+            _ => Ok((
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "status": "error",
+                    "message": "Unsupported language"
+                })),
+            )),
+        },
+        Err(_) => Ok((
             StatusCode::NOT_FOUND,
             Json(json!({
                 "status": "error",
@@ -364,18 +368,16 @@ pub async fn invoke_brick_handler(
 fn execute_script(
     cmd_args: &[&str],
     params: HashMap<String, String>,
-    payload: Option<Json<HashMap<String, serde_json::Value>>>,
+    payload: Option<Json<HashMap<String, Value>>>,
 ) -> std::process::Output {
     for (key, value) in params {
-        std::env::set_var(key, value);
+        env::set_var(key, value);
     }
-
     if let Some(pay) = payload {
         if let Ok(payload_json) = serde_json::to_string(&pay.0) {
-            std::env::set_var("PAYLOAD", payload_json);
+            env::set_var("PAYLOAD", payload_json);
         }
     }
-
     Command::new(cmd_args[0])
         .args(&cmd_args[1..])
         .stdout(Stdio::piped())

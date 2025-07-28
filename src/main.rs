@@ -57,6 +57,8 @@ async fn main() {
         .route("/api/brick/:id", delete(delete_brick_handler))
         // Invocations
         .route("/api/brick/invoke/:id", get(invoke_brick_handler))
+        .route("/api/brick/invoke/:id", post(invoke_brick_handler))
+
         .with_state(Arc::new(AppState { db: pool.clone() }));
 
     println!("✅ Server started successfully at 0.0.0.0:3000");
