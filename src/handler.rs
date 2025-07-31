@@ -14,6 +14,8 @@ use axum::{
 use serde_json::{json, Value};
 use sqlx::{query, query_as, Error as SqlxError};
 
+use log::info;
+
 use crate::{
     model::{BrickModel, BrickModelResponse},
     schema::{CreateBrickSchema, FilterOptions, UpdateBrickSchema},
@@ -275,7 +277,6 @@ pub async fn delete_brick_handler(
 }
 
 // Invoke a brick
-// TODO: Invoke a brick here
 
 pub async fn invoke_brick_handler(
     Path(id): Path<String>,
@@ -284,6 +285,10 @@ pub async fn invoke_brick_handler(
     params: Query<HashMap<String, String>>,
     payload: Option<Json<HashMap<String, Value>>>,
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    info!(
+        "Request received: id={}, params={:?}, payload={:?}",
+        id, params, payload
+    );
     let row = query!(
         "SELECT id, source_path, language FROM bricks WHERE id = $1",
         id
@@ -299,6 +304,11 @@ pub async fn invoke_brick_handler(
                     params.0.clone(),
                     payload.clone(),
                 );
+
+                // println!("Brick: {:?}", brick);
+                //
+                // println!("{:?}", params);
+                // println!("{:?}", payload);
 
                 if output.status.success() {
                     Ok((
