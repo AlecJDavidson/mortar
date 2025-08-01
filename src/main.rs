@@ -7,6 +7,13 @@ use axum::{
     routing::{delete, get, patch, post, put},
     Json, Router,
 };
+
+use axum::http::{
+    header::{AUTHORIZATION, CONTENT_TYPE},
+    HeaderValue,
+};
+use tower_http::cors::{Any, CorsLayer};
+
 use dotenv::dotenv;
 use handler::{
     create_brick_handler, delete_brick_handler, get_brick_handler, invoke_brick_handler,
@@ -28,6 +35,11 @@ pub struct AppState {
 #[tokio::main]
 async fn main() {
     dotenv().ok(); // Read from .env file
+
+    let cors_layer = CorsLayer::new()
+        .allow_methods(Any)
+        .allow_origin("*".parse::<HeaderValue>().unwrap())
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE]);
 
     // Setup the DB Connection
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must set");
@@ -58,7 +70,7 @@ async fn main() {
         // Invocations
         .route("/api/brick/invoke/:id", get(invoke_brick_handler))
         .route("/api/brick/invoke/:id", post(invoke_brick_handler))
-
+        .layer(cors_layer)
         .with_state(Arc::new(AppState { db: pool.clone() }));
 
     println!("✅ Server started successfully at 0.0.0.0:3000");
