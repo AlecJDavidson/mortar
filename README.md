@@ -1,84 +1,175 @@
-### Start the DB with docker compose ###
+# Mortar
 
-docker compose up -d
+**Mortar** is a backend API designed to run functions/scripts on a server. It currently supports running Python and Bash scripts, with plans to extend support to Rust, C, Go, and Node.js in the future.
 
-### Connect using psql ###
+## Table of Contents
 
-psql -h localhost -p 5432 -U mortar -W mortar
+- [Technology Stack](#technology-stack)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Running with Docker Compose](#running-with-docker-compose)
+  - [Running from Source](#running-from-source)
+- [Usage](#usage)
+  - [Create Brick](#create-brick)
+  - [Delete Brick](#delete-brick)
+  - [Patch Brick](#patch-brick)
+  - [Put Brick](#put-brick)
+  - [Invoke Brick](#invoke-brick)
+- [Troubleshooting](#troubleshooting)
 
-### Create the Bricks Table ###
+## Technology Stack
 
-# TODO: Fix last invoked 
+- **API**: Rust
+- **Database**: PostgreSQL
+- **Containerization**: Docker Compose
 
-CREATE TABLE bricks(
-    id CHAR(36) PRIMARY KEY NOT NULL,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    language VARCHAR(255) NOT NULL,
-    source_path VARCHAR(255) NOT NULL,
-    active BOOLEAN,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_invoked TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+## Getting Started
+
+### Prerequisites
+
+Make sure you have the following installed on your system:
+- Docker and Docker Compose
+- Rust (if running from source)
+- PostgreSQL CLI tools (if running from source)
+
+### Running with Docker Compose
+
+1. Clone this repository:
+
+   ```bash
+   git clone https://github.com/AlecJDavidson/mortar.git
+   cd mortar
+   ```
+
+2. Start the services using Docker Compose:
+    
+   ```bash
+   docker-compose up -d
+   ```
+
+### Running from Source 
+
+1. Ensure PostgreSQL is running. 
+
+2. Run database migrations: 
+
+   ```bash
+   cargo install sqlx-cli
+   ~/.cargo/bin/sqlx migrate add -r create_bricks_table
+   ```
+
+3. Create the bricks table by adding the following SQL to your migration files:
+
+   ```bash
+    -- Up Migration
+    CREATE TABLE IF NOT EXISTS bricks(
+        id CHAR(36) PRIMARY KEY NOT NULL,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        language VARCHAR(255) NOT NULL,
+        source_path VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_invoked TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+    
+    -- Down Migration
+    DROP TABLE IF EXISTS bricks;
+   ```
 
-### Create Migrations ###
+4. Apply Migrations:
 
-# CLI For migration
-cargo install sqlx-cli
+   ```bash
+    ~/.cargo/bin/sqlx migrate run
+   ```
 
-# create a migration
-~/.cargo/bin/sqlx migrate add -r create_bricks_table
+### Usage 
 
+# All scripts you want to run need to be placed in the bricks directory.
 
-# Update the up/down/revert
--- Add up migration script here
+## Create Brick
 
-CREATE TABLE IF NOT EXISTS bricks(
-    id CHAR(36) PRIMARY KEY NOT NULL,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    language VARCHAR(255) NOT NULL,
-    source_path VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_invoked TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+# Create a brick with the following command:
 
-    active BOOLEAN,
+   ```bash
+   curl -X POST http://127.0.0.1:3333/api/brick \
+     -H "Content-Type: application/json" \
+     -d '{
+           "id": "1",
+           "name": "Hello World!",
+           "language": "Bash",
+           "source_path": "/app/bricks/hello.sh"
+         }'
+   ```
 
+# Ensure ./bricks/hello.sh exists with the following content:
 
--- Add down migration script here
+   ```bash
+   #! /bin/bash
 
-DROP TABLE IF EXISTS bricks;
+   echo Hello World!
+   ```
 
-# perform migration up
-~/.cargo/bin/sqlx migrate run
+## Delete Brick
 
-# (perform migration down/revert)
-~/.cargo/bin/sqlx migrate revert
+# Delete a brick using its ID: 
 
-### Creating a CRUD app using this tutorial ###
+   ```bash
+   curl -X DELETE http://127.0.0.1:3333/api/brick/<brick-id> \
+     -H "Content-Type: application/json"
+   ```
 
-https://medium.com/@raditzlawliet/build-crud-rest-api-with-rust-and-mysql-using-axum-sqlx-d7e50b3cd130
+## Patch Brick
 
+# Patch a brick using its ID: 
+# Patch (update) an existing brick: 
 
-### Notes ###
+   ```bash
+   curl -X PATCH http://127.0.0.1:3333/api/brick/<brick-id> \
+         -H "Content-Type: application/json" \
+         -d '{
+               "name": "Hello Brick Patched",
+               "language": "Bash",
+               "source_path": "/app/bricks/hello.sh"
+             }'   
+   ```
 
-Query with and/or without Macro
+## Put Brick
+# Put a brick using its ID: 
+# Replace an existing brick with new data:  
 
-Sqlx have query macro and query function (without macro), you can pick one best for your case.
+   ```bash
+   curl -X PUT http://127.0.0.1:3333/api/brick/<brick-id> \
+         -H "Content-Type: application/json" \
+         -d '{
+               "name": "Hello Brick Put",
+               "language": "Bash",
+               "source_path": "/app/bricks/hello.sh"
+             }'
+   ```
 
-Example with Macro:
+## Invoke Brick
 
-sqlx::query_as!(
-    BrickModel,
-    r#"SELECT * FROM bricks ORDER by id LIMIT ? OFFSET ?"#,
-    limit as i32,
-    offset as i32
-)
+# Invoke a brick to run the corresponding script and send a JSON payload: 
 
-Example without Macro:
+   ```bash
+   curl -X POST http://127.0.0.1:3333/api/brick/invoke/<brick-id> \
+         -H "Content-Type: application/json" \
+         -d '{
+               "payload": "Test Payload",
+             }'   
+   ```
+# Invoke a brick and send query parameters: 
 
-sqlx::query_as::<_, BrickModel>(
-    r#"SELECT * FROM bricks ORDER by id LIMIT ? OFFSET ?"#
-)
+   ```bash
+   curl -X POST "http://localhost:3000/api/brick/invoke/b5753051-20f4-4921-8c8a-84968f90e397?param1=value1&param2=value2" \
+     -H "Content-Type: application/json"
+   ```
 
-### For resolving docker build error ###
-sudo setenforce 0
+## Troubleshooting
+
+# Docker Build Error on Certain Linux Distros 
+# If you encounter an error while building the Docker image, try: 
+
+   ```bash
+   sudo setenforce 0
+   ```
+
