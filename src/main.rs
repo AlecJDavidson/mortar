@@ -73,9 +73,9 @@ async fn main() {
         .layer(cors_layer)
         .with_state(Arc::new(AppState { db: pool.clone() }));
 
-    println!("✅ Server started successfully at 0.0.0.0:3000");
+    println!("✅ Server started successfully at 0.0.0.0:3333");
 
-    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:3333").await.unwrap();
     axum::serve(listener, app.into_make_service())
         .await
         .unwrap();

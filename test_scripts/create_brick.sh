@@ -1,10 +1,10 @@
 #! /bin/bash
 
-curl -X POST http://127.0.0.1:3000/api/brick\
+curl -X POST http://127.0.0.1:3333/api/brick\
      -H "Content-Type: application/json" \
      -d '{
            "id": "1",
-           "name": "Webhook Test",
+           "name": "Hello World!",
            "language": "Bash",
-           "source_path": "../bricks/webhook_test.sh"
+           "source_path": "bricks/hello.sh"
          }'

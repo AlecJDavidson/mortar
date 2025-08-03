@@ -79,3 +79,6 @@ Example without Macro:
 sqlx::query_as::<_, BrickModel>(
     r#"SELECT * FROM bricks ORDER by id LIMIT ? OFFSET ?"#
 )
+
+### For resolving docker build error ###
+sudo setenforce 0
