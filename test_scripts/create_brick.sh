@@ -6,5 +6,5 @@ curl -X POST http://127.0.0.1:3333/api/brick\
            "id": "1",
            "name": "Hello World!",
            "language": "Bash",
-           "source_path": "bricks/hello.sh"
+           "source_path": "/app/bricks/hello.sh"
          }'
