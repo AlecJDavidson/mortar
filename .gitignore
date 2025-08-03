@@ -1,4 +1,4 @@
 /target
 .env
 migrations
-docker-build.sh
+docker-publish.sh
