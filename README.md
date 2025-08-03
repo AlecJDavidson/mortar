@@ -81,7 +81,7 @@ Make sure you have the following installed on your system:
     ~/.cargo/bin/sqlx migrate run
    ```
 
-### Usage 
+## Usage 
 
 ### All scripts you want to run need to be placed in the bricks directory.
 
