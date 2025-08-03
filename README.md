@@ -83,11 +83,11 @@ Make sure you have the following installed on your system:
 
 ### Usage 
 
-# All scripts you want to run need to be placed in the bricks directory.
+### All scripts you want to run need to be placed in the bricks directory.
 
 ## Create Brick
 
-# Create a brick with the following command:
+## Create a brick with the following command:
 
    ```bash
    curl -X POST http://127.0.0.1:3333/api/brick \
@@ -100,7 +100,7 @@ Make sure you have the following installed on your system:
          }'
    ```
 
-# Ensure ./bricks/hello.sh exists with the following content:
+### Ensure ./bricks/hello.sh exists with the following content:
 
    ```bash
    #! /bin/bash
@@ -110,7 +110,7 @@ Make sure you have the following installed on your system:
 
 ## Delete Brick
 
-# Delete a brick using its ID: 
+### Delete a brick using its ID: 
 
    ```bash
    curl -X DELETE http://127.0.0.1:3333/api/brick/<brick-id> \
@@ -119,8 +119,8 @@ Make sure you have the following installed on your system:
 
 ## Patch Brick
 
-# Patch a brick using its ID: 
-# Patch (update) an existing brick: 
+## Patch a brick using its ID: 
+## Patch (update) an existing brick: 
 
    ```bash
    curl -X PATCH http://127.0.0.1:3333/api/brick/<brick-id> \
@@ -133,8 +133,8 @@ Make sure you have the following installed on your system:
    ```
 
 ## Put Brick
-# Put a brick using its ID: 
-# Replace an existing brick with new data:  
+### Put a brick using its ID: 
+### Replace an existing brick with new data:  
 
    ```bash
    curl -X PUT http://127.0.0.1:3333/api/brick/<brick-id> \
@@ -148,7 +148,7 @@ Make sure you have the following installed on your system:
 
 ## Invoke Brick
 
-# Invoke a brick to run the corresponding script and send a JSON payload: 
+### Invoke a brick to run the corresponding script and send a JSON payload: 
 
    ```bash
    curl -X POST http://127.0.0.1:3333/api/brick/invoke/<brick-id> \
@@ -157,7 +157,7 @@ Make sure you have the following installed on your system:
                "payload": "Test Payload",
              }'   
    ```
-# Invoke a brick and send query parameters: 
+### Invoke a brick and send query parameters: 
 
    ```bash
    curl -X POST "http://localhost:3000/api/brick/invoke/b5753051-20f4-4921-8c8a-84968f90e397?param1=value1&param2=value2" \
@@ -166,10 +166,9 @@ Make sure you have the following installed on your system:
 
 ## Troubleshooting
 
-# Docker Build Error on Certain Linux Distros 
-# If you encounter an error while building the Docker image, try: 
+### Docker Build Error on Certain Linux Distros 
+### If you encounter an error while building the Docker image, try: 
 
    ```bash
    sudo setenforce 0
    ```
-
