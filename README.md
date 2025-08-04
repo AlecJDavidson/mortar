@@ -85,9 +85,7 @@ Make sure you have the following installed on your system:
 
 ### All scripts you want to run need to be placed in the bricks directory.
 
-## Create Brick
-
-## Create a brick with the following command:
+## Create Bricks
 
    ```bash
    curl -X POST http://127.0.0.1:3333/api/brick \
@@ -108,19 +106,16 @@ Make sure you have the following installed on your system:
    echo Hello World!
    ```
 
-## Delete Brick
+## Delete Bricks
 
-### Delete a brick using its ID: 
+### Delete a brick using the ID: 
 
    ```bash
    curl -X DELETE http://127.0.0.1:3333/api/brick/<brick-id> \
      -H "Content-Type: application/json"
    ```
 
-## Patch Brick
-
-## Patch a brick using its ID: 
-## Patch (update) an existing brick: 
+## Patch (update) an existing brick using the ID: 
 
    ```bash
    curl -X PATCH http://127.0.0.1:3333/api/brick/<brick-id> \
@@ -132,9 +127,7 @@ Make sure you have the following installed on your system:
              }'   
    ```
 
-## Put Brick
-### Put a brick using its ID: 
-### Replace an existing brick with new data:  
+## Put a brick using the ID: 
 
    ```bash
    curl -X PUT http://127.0.0.1:3333/api/brick/<brick-id> \
@@ -146,7 +139,7 @@ Make sure you have the following installed on your system:
              }'
    ```
 
-## Invoke Brick
+## Invoke a Brick
 
 ### Invoke a brick to run the corresponding script and send a JSON payload: 
 
@@ -157,7 +150,7 @@ Make sure you have the following installed on your system:
                "payload": "Test Payload",
              }'   
    ```
-### Invoke a brick and send query parameters: 
+### Invoke a brick with query parameters: 
 
    ```bash
    curl -X POST "http://localhost:3000/api/brick/invoke/b5753051-20f4-4921-8c8a-84968f90e397?param1=value1&param2=value2" \
